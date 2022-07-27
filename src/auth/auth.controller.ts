@@ -4,10 +4,11 @@ import {
   Get,
   Post,
   Req,
+  Res,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 import AccessTokenGuard from '../common/guards/access-token.guard';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -44,7 +45,6 @@ class AuthController {
     const id = request.user['sub'];
     const refreshToken = request.user['refreshToken'];
 
-    console.log(refreshToken);
     return this.authService.refreshTokens(id, refreshToken);
   }
 }

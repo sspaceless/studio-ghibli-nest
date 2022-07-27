@@ -10,7 +10,8 @@ import { ACCESS_DENIED_MESSAGE, USER_ALREADY_EXIST_MESSAGE } from './config';
 import { UserDocument } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import CreateUserDto from '../users/dto/create-user.dto';
-import Tokens from '../auth/types/tokens.type';
+import UserDto from '../users/dto/signin-user.dto';
+import TokensDto from 'src/users/dto/tokens.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signupLocal(userDto: CreateUserDto): Promise<Tokens> {
+  async signupLocal(userDto: CreateUserDto): Promise<UserDto> {
     const { email, password } = userDto;
     const isUserExist = await this.usersService.getUserByEmail(email);
     if (isUserExist) {
@@ -34,13 +35,25 @@ export class AuthService {
 
     const tokens = await this.generateTokens(newUser);
     await this.updateRefreshTokenHash(newUser.id, tokens.refreshToken);
-    return tokens;
+
+    return {
+      id: newUser.id,
+      email: newUser.email,
+      username: newUser.username,
+      tokens,
+    };
   }
 
-  async signinLocal(user: UserDocument): Promise<Tokens> {
+  async signinLocal(user: UserDocument): Promise<UserDto> {
     const tokens = await this.generateTokens(user);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
-    return tokens;
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      tokens,
+    };
   }
 
   signout(id: string) {
@@ -62,8 +75,14 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
-    await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
-    return tokens;
+    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      tokens,
+    };
   }
 
   private async updateRefreshTokenHash(id: string, refreshToken: string) {
@@ -71,7 +90,7 @@ export class AuthService {
     await this.usersService.updateRefreshToken(id, hashedToken);
   }
 
-  private async generateTokens(user: UserDocument): Promise<Tokens> {
+  private async generateTokens(user: UserDocument): Promise<TokensDto> {
     const jwtPayload = {
       sub: user.id,
       email: user.email,
